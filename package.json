@@ -1,0 +1,29 @@
+{
+    "name": "uvexbot",
+    "version": "1.0.0",
+    "description": "Bot avec réponse automatique et contextuelle + gestion des wr via api src",
+    "main": "server.js",
+    "type": "module",
+    "scripts": {
+        "start": "node --import ./loader.js bot.js",
+        "radar": "node --import ./loader.js setup-radar.js",
+        "init-db": "node --import ./loader.js init-db.js"
+    },
+    "author": "Uvexfelle",
+    "license": "ISC",
+    "dependencies": {
+        "ansi-colors": "^4.1.3",
+        "better-sqlite3": "^12.5.0",
+        "cli-progress": "^3.12.0",
+        "concurrently": "^9.2.1",
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1",
+        "fuse.js": "^7.1.0",
+        "node-fetch": "^3.3.2",
+        "tmi.js": "^1.8.5"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.14"
+    }
+}

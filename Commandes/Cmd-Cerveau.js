@@ -1,0 +1,184 @@
+import { cmdCache, dbViral, getCurrentTimeUTC2, IS_CMD_LOCK } from "../Setup/Utilitaires/loader.js";
+import { formatResponse, getSrcId } from "./Moteur/Utilitaire.js";
+import { getPbWrResponse } from "./Moteur/Pb-Wr-engine.js";
+import { cmdModeration } from "./Moteur/Modération.js"
+import { handleAutoTicker, RegexEngine } from "./Moteur/Cmd-basique.js";
+
+
+//  Buffer
+    //  Configuration
+const messageQueue = [];
+let isSending = false;
+const rateLimiteInterval = 367;
+const antiDoublonTimout = 1000;
+
+let lastMessageSentTime = 0;
+const lastSentMessages = new Map();
+
+    //  Application
+export const pushToBuffer = (client, channel, text) => {
+    if (!text) return;
+
+        //  Protection anti doublons
+    const channelHistory = lastSentMessages.get(channel) || {};
+    const lastSentTime = channelHistory[text] || 0;
+
+    if (Date.now() - lastSentTime < antiDoublonTimout) {
+        return;
+    }
+
+        //  Mis à jour de l'historique
+    channelHistory[text] = Date.now();
+    lastSentMessages.set(channel, channelHistory);
+
+        //  Envoie
+    const tempsEcoule = Date.now() - lastMessageSentTime;
+
+    if (!isSending && messageQueue.length === 0 && tempsEcoule >= rateLimiteInterval) {
+        client.say(channel, text);
+        lastMessageSentTime = Date.now();
+        console.log(`[${getCurrentTimeUTC2()}] UvexBot : ${text}`);
+    }
+    else {
+        messageQueue.push({ channel, text });
+        if (!isSending) {
+            isSending = true;
+
+            const tempsAttenteRequis = Math.max(0, rateLimiteInterval - tempsEcoule);
+            setTimeout(() => processQueue(client), tempsAttenteRequis);
+        }
+    }
+};
+
+    //  Videnge d'historique
+const processQueue = (client) => {
+    if (messageQueue.length = 0) {
+        isSending = false;
+        return;
+    }
+    const nextMessage = messageQueue.shift();
+
+    client.say(nextMessage.channel, nextMessage.text);
+    lastMessageSentTime = Date.now();
+    console.log(`[${getCurrentTimeUTC2()}] UvexBot : ${nextMessage.text}`);
+
+    setTimeout(() => processQueue(client), rateLimiteInterval);
+};
+
+//  Géstionaire de réponse
+export const getBotResponse = async (userMessage, channelName, live, client, channel, tags, pseudo) => {
+    try {
+        if (!channelName) return null;
+
+        const runnerCible = getSrcId(channelName) || channelName;
+
+    //  Message automatique
+        await handleAutoTicker(client, channel, 1);
+
+    //  Nettoyage du message
+        const messageBrut = userMessage.trim();
+        if (!messageBrut) return null;
+
+        //  Découpage du trigger
+        const words = messageBrut.split(/\s+/);
+
+        let trigger = '';
+        let inputRestant = '';
+
+            //suppression du @
+        if (words[0] && words[0].startsWith('@')) {
+            trigger = words[1] ? words[1].toLowerCase() : '';
+            inputRestant = words.slice(2).join(' ');
+        } else {
+            trigger = words[0] ? words[0].toLowerCase() : '';
+            inputRestant = words.slice(1).join(' ');
+        }
+
+        if (!trigger) return null;
+
+    //  Routage commande
+        let retourBrute = null;
+        let finalId = 'inconnu';
+
+        //  Regex
+        const regexMatch = RegexEngine(messageBrut);
+
+        //  Commandes
+        const cmd = cmdCache.commandes[trigger];
+
+        // Regex trouvé
+        if (regexMatch) {
+            //  Réponse direct d'une regex
+            if (regexMatch.drapeau === 'finalMsg') {
+                retourBrute = regexMatch.input;
+                finalId = 'regex-direct';
+            //  Détection de commandes
+            } else if (regexMatch.trigger) {
+                //  via le trigger
+                if (cmd) {
+                    inputRestant = words.slice(1).join(' ');
+                //  via language naturel
+                } else {
+                trigger = regexMatch.trigger.toLowerCase();
+                inputRestant = regexMatch.input;
+                }
+            }
+        }
+
+        if (!retourBrute && !trigger) return null;
+
+        if (!retourBrute && cmd && cmd.on_off === 0) {
+            switch (cmd.type.toLowerCase()) {
+
+        //  Modération
+                case 'modération':
+                    const isMod = tags.mod === true || tags.badges?.moderator === '1';
+                    const isStreamer = tags.badges?.broadcaster === '1';
+
+                    if (isMod || isStreamer) {
+                        await cmdModeration(messageBrut, pseudo, runnerCible, client, channel);
+                        cmd.total_count = (cmd.total_count || 0) + 1;
+                    }
+
+                    return null;
+
+        //  Speedrun
+                case 'speedrun':
+                    retourBrute = await getPbWrResponse(trigger, inputRestant, runnerCible, client, channel);
+                    finalId = 'speedrun-engine';
+                    cmd.total_count = (cmd.total_count || 0) + 1;
+                    break;
+
+        //  Commande statique
+                case 'static':
+                    const execptions = ['SpoilTime', 'TestLive']
+                    if (IS_CMD_LOCK && !execptions.includes(cmd.name)) {
+                        return null;
+                    }
+                    retourBrute = cmd.response;
+                    finalId = 'static-command';
+                    cmd.total_count = (cmd.total_count || 0) + 1;
+                    break;
+
+        //  Envoie automatique
+                case 'auto':
+                    return null;
+            }
+        }
+        if (!retourBrute) return null;
+
+    //  Formatage des réponse
+        const texteFinal = formatResponse(retourBrute, live, channelName, pseudo);
+
+        if (!texteFinal) return null;
+
+    //  Envoie via buffer
+        pushToBuffer(client, channel, texteFinal);
+
+        return { text: texteFinal, id: finalId };
+
+    } catch (err) {
+        console.error(`[ça pue du cul...] Cmd-cerveau vas pas bien :`, err);
+        return null;
+    }
+};

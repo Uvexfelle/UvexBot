@@ -1,0 +1,16 @@
+# Tokens, ids et Twitch
+.env
+.env.LamaBot
+
+#Base de données
+Data/
+
+# dossiers des dépendances
+node_modules/
+
+#Logs PM2
+*.Log
+npm-debug.log*
+cron_src.log
+
+.DS_Store

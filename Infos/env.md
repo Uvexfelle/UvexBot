@@ -1,0 +1,4 @@
+TWITCH_USER=Pseudo_Du_Compte_Twittch_Du_Bot
+TWITCH_AUTH=oauth:
+TWITCH_CHAN=Chaine_À_Suivre
+TWITCH_CLIENT_ID=
