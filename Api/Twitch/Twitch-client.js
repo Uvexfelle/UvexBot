@@ -74,7 +74,7 @@ client.on('message', async (channel, tags, message, self) => {
     const pseudo = tags['display-name'];
     let nomDeLaChaine = getTargetRunner(channel);
 
-    console.log(`[${getCurrentTimeUTC2()}] ${pseudo} : ${message}`);
+    console.log(`§§(${getCurrentTimeUTC2()}) ${pseudo} : ${message}`);
     try {
         const broadId = await getBroadcasterId(nomDeLaChaine);
         const live = await getStreamInfo(broadId);

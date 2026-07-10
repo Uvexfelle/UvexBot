@@ -88,17 +88,12 @@ ________________________________________________________________________________
 Bot fonctionnelle mais avant le dashboard web
 
 * Bug
-    (
-    - commandes auto, coupe la paroles aux commandes...
-    - premier-fetch 
-        - Golf It
-    - history-fetch
-        -botw
-        )
-    - Time to sec accepter le h min sec
+    - AddPb
+    - Titre to uid
+    - SpoilTime
 
-    - Modifier les commandes auto pour la nouvelle architecture                 | à repenser pour qu'elle soit autonome
-    - régler le problème du src_time et manual_time
+  J'ai le temps chil ----
+    - Auto commandes
 * À implémenter
 
 * À meditaire

@@ -101,17 +101,19 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
     //  Routage commande
         let retourBrute = null;
         let finalId = 'inconnu';
+        let activeDrapeau = 'inconnu';
+
+        //  Commandes
+        let cmd = cmdCache.commandes[trigger];
 
         //  Regex
         const regexMatch = RegexEngine(messageBrut);
-
-        //  Commandes
-        const cmd = cmdCache.commandes[trigger];
+        activeDrapeau = regexMatch?.drapeau;
 
         // Regex trouvé
         if (regexMatch) {
             //  Réponse direct d'une regex
-            if (regexMatch.drapeau === 'finalMsg') {
+            if (activeDrapeau === 'finalMsg') {
                 retourBrute = regexMatch.input;
                 finalId = 'regex-direct';
             //  Détection de commandes
@@ -119,13 +121,16 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
                 //  via le trigger
                 if (cmd) {
                     inputRestant = words.slice(1).join(' ');
+                    activeDrapeau = 'inconnu';
                 //  via language naturel
                 } else {
                 trigger = regexMatch.trigger.toLowerCase();
                 inputRestant = regexMatch.input;
+                cmd = cmdCache.commandes[trigger];
                 }
             }
         }
+        console.log(`trigger : ${trigger} cmd type : ${cmd.type}`);
 
         if (!retourBrute && !trigger) return null;
 
@@ -142,12 +147,11 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
                         cmd.total_count = (cmd.total_count || 0) + 1;
                         stmtTotalCount.run(cmd.name);
                     }
-
                     return null;
 
         //  Speedrun
                 case 'speedrun':
-                    retourBrute = await getPbWrResponse(trigger, inputRestant, runnerCible, client, channel);
+                    retourBrute = await getPbWrResponse(trigger, inputRestant, runnerCible, live, activeDrapeau);
                     finalId = 'speedrun-engine';
                     cmd.total_count = (cmd.total_count || 0) + 1;
                     stmtTotalCount.run(cmd.name);

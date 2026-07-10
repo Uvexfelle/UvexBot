@@ -1,6 +1,6 @@
 import { client } from "tmi.js";
 import { dbViral, dbBigData } from "../../Setup/Utilitaires/loader.js";
-import { formatResponse, getSrcId, secToTime, getTitreUid, getNamesFromIds } from "./Utilitaire.js";
+import { formatResponse, getSrcId, secToTime, getTitreUid, getIdFromText, getNamesFromIds } from "./Utilitaire.js";
 
 //  Automatique
 const cachePatterns = {};
@@ -116,13 +116,13 @@ const redondance = /fair(e)? l(e|a) m.me (jeu|chos)/i;
 
     //  Logique
 export const RegexEngine = (q) => {
-    
-        //  100%    
+
     const hasPk = pk.test(q);
     const hasNop = nop.test(q);
     let match;
 
     if (!hasPk && global100.test(q)) {
+        //  100%
         const botwGameId = '76rqjqd8';
         const detected = getIdFromText(q, 'FORCE_NO_FALLBACK');
 
@@ -153,7 +153,7 @@ export const RegexEngine = (q) => {
 
         //  Pb
     if (!hasPk && !/\bg.\b|ça|chanc|bat|explos|proch.?\b|\bloin\b|te[chk]ni/i.test(q) && (match = q.match(pbMatch)) && hasNop) {
-        const indexFinMatch = q.indexOf(match) + match.length;
+        const indexFinMatch = match.index + match[0].length;
         let reste = q.slice(indexFinMatch).trim();
         
         reste = reste.replace(cleanPrefix, '').trim();

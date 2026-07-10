@@ -58,7 +58,7 @@ const rawOutPut = (message, prefix, activeDrapeau) => {
 export const getPbWrResponse = async (trigger, inputRestant, runnerCible, live, activeDrapeau) => {
     try {
     //  Tri global des infos
-        const prefix = activeDrapeau ? `{user}, ` : ' ';
+        const prefix = (activeDrapeau === 'user') ? `{user}, ` : '';
         const action = trigger.toLowerCase();
 
         let gameId = null;

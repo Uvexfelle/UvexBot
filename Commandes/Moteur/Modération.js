@@ -47,6 +47,7 @@ export const cmdModeration = async (userMessage, pseudo, runnerCible, client, ch
 
                     //  Temps
                 const timeSec = timeToSec(words[1]);
+                console.log(`time en seconde : ${timeSec}`);
                 if (!timeSec) return;
 
                     //  Date

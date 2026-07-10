@@ -146,7 +146,7 @@ export const removeCacheCmdDirect = (trigger) => {
 };
 
 //  Arrêt des commandes
-export const IS_CMD_LOCK = false;
+export const IS_CMD_LOCK = true;
 //  Dérivation pour test
 export const IS_DEV_MODE = true;
 //  Joint channel id src

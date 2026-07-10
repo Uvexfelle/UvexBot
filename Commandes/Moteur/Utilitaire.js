@@ -313,12 +313,39 @@ export const getTitreUid = (live) => {
 export const timeToSec = (hms) => {
     if (!hms || typeof hms !== 'string' || hms.includes('Laissez')) return 0;
 
-    const parts = hms.split(':').map(Number).filter(val => !isNaN(val));
-    if (parts.length === 0) return 0;
+    const texte = hms.trim().toLowerCase();
 
-    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-    if (parts.length === 2) return parts[0] * 60 + parts[1];
-    return parts[0] || 0;
+    let resteSansMs = texte;
+    let msEnSec = 0;
+
+    if (texte.includes(',')) {
+        const [avantVirgule, apresVirgule] = texte.split(',');
+        const msStr = apresVirgule.match(/\d+/)?.[0] || 0;
+        if (msStr) {
+            msEnSec = Number(`0.${msStr}`) || 0;
+        }
+        resteSansMs = avantVirgule;
+    }
+
+    if (resteSansMs.includes('h')) {
+        const [hBrut, reste] = resteSansMs.split('h');
+        const h = Number(hBrut) || 0;
+
+        const parts = reste.match(/\d+/g)?.map(Number) || [];
+        const m = parts[0] || 0;
+        const s = parts[1] || 0;
+
+        return (h * 3600) + (m * 60) + s + msEnSec;
+    }
+
+    const parts = resteSansMs.match(/\d+/g)?.map(Number) || [];
+    if (parts.length === 0) return msEnSec;
+
+    if (parts.length === 3) {
+        return (parts[0] * 3600) + (parts[1] * 60) + parts[2] + msEnSec;
+    }
+
+    return parts[0] + msEnSec;
 };
 
     // Sec -> Text
