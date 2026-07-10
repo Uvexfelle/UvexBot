@@ -76,7 +76,7 @@ export const listeCommandes = [
     {name: 'Pb', pattern: '!pb', resp: '', category: 'speedrun', type: 'speedrun'},
     {name: 'Wr', pattern: '!wr', resp: '', category: 'speedrun', type: 'speedrun'},
     {name: 'Pb progress', pattern: '!pbprogress', resp: '', category: 'speedrun', type: 'speedrun'},
-    {name: 'Pb periode', pattern: '!pbperiode', resp: '', category: 'speedrun', type: 'speedrun'},
+    {name: 'Pb periode', pattern: '!pbperiode,!pbdate', resp: '', category: 'speedrun', type: 'speedrun'},
     {name: 'Top', pattern: '!top', resp: '', category: 'speedrun', type: 'speedrun'},
     {name: 'Add Pb', pattern: '!addpb', resp: '', category: 'modération', type: 'modération'},
     {name: 'Wr periode', pattern: '!wrperiode', resp: '', category: 'speedrun', type: 'old'},

@@ -130,7 +130,6 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
                 }
             }
         }
-        console.log(`trigger : ${trigger} cmd type : ${cmd.type}`);
 
         if (!retourBrute && !trigger) return null;
 
@@ -151,7 +150,7 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
 
         //  Speedrun
                 case 'speedrun':
-                    retourBrute = await getPbWrResponse(trigger, inputRestant, runnerCible, live, activeDrapeau);
+                    retourBrute = await getPbWrResponse(cmd.name, inputRestant, runnerCible, live, activeDrapeau);
                     finalId = 'speedrun-engine';
                     cmd.total_count = (cmd.total_count || 0) + 1;
                     stmtTotalCount.run(cmd.name);

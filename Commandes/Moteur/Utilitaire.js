@@ -59,6 +59,7 @@ export const getIdFromText = (input, runnerCible) => {
         return { game_id: null, uid: null, texteRestant: input };
     }
 
+        //  Catégorie
     const gId = absoluteBestGame.id;
     gameFirstIndex = absoluteBestGame.start;
     gameLastIndex = absoluteBestGame.end;

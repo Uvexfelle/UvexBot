@@ -55,11 +55,10 @@ const rawOutPut = (message, prefix, activeDrapeau) => {
 };
 
 //  Moteur des infos speedrun.com
-export const getPbWrResponse = async (trigger, inputRestant, runnerCible, live, activeDrapeau) => {
+export const getPbWrResponse = async (cmdName, inputRestant, runnerCible, live, activeDrapeau) => {
     try {
     //  Tri global des infos
         const prefix = (activeDrapeau === 'user') ? `{user}, ` : '';
-        const action = trigger.toLowerCase();
 
         let gameId = null;
         let uid = null;
@@ -113,10 +112,10 @@ export const getPbWrResponse = async (trigger, inputRestant, runnerCible, live, 
         }
 
         //  Switch
-        switch (action) {
+        switch (cmdName) {
 
         //  Pb
-            case '!pb': {
+            case 'Pb': {
             //  Trois derniers Pb
                 if (!inputRestant) {
                     const rows = dbBigData.prepare(`
@@ -202,7 +201,7 @@ export const getPbWrResponse = async (trigger, inputRestant, runnerCible, live, 
             }
 
         //  Wr
-            case '!wr': {
+            case 'Wr': {
             //  Récupération des Wr
                 //  Si y'a un uid
                 let wrRow = dbBigData.prepare(`
@@ -246,7 +245,7 @@ export const getPbWrResponse = async (trigger, inputRestant, runnerCible, live, 
             }
 
         //  Pb progress
-            case '!pbprogress': {
+            case 'Pb progress': {
             //  Récupéraiton des historique via Uid
                 //  Historique
                 const historyRows = dbBigData.prepare(`
@@ -388,7 +387,7 @@ export const getPbWrResponse = async (trigger, inputRestant, runnerCible, live, 
             }
 
         //  Pb periode
-            case '!pbperiode': {
+            case 'Pb periode': {
                 let segmentDateBrut = texteRestant;
                 let dateDebutSql = null;
                 let dateFinSql = null;
@@ -570,7 +569,7 @@ export const getPbWrResponse = async (trigger, inputRestant, runnerCible, live, 
             }
 
         //  Top
-            case '!top': {
+            case 'Top': {
                 const matchLimit = texteRestant.match(/^\d+/);
                 const chiffrePivot = matchLimit ? parseInt(matchLimit, 10) : 5;
 
