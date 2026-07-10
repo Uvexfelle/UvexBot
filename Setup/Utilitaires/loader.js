@@ -29,14 +29,13 @@ export const cmdCache = {
 export const reloadBotCache = () => {
     try {
         //  Mise à jour des données
-        console.log(`- Nounou ? FUEGO !!!!`);
-
             //  Transaction
                 //commandes
         const stmtCmd = dbViral.prepare(`
             INSERT INTO commandes (name, pattern, response, total_count, category, type)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(name) DO UPDATE SET
+                pattern = excluded.pattern,
                 response = excluded.response,
                 category = excluded.category
         `);
@@ -57,12 +56,10 @@ export const reloadBotCache = () => {
 
             //  Écriture
         dbViral.transaction(() => {
-            console.log(`- ça chauffe doucement.`);
                 //commandes
             for (const cmd of listeCommandes) {
                 stmtCmd.run(cmd.name || cmd.pattern.substring(1), cmd.pattern, cmd.resp, cmd.total_count || 0, cmd.category, cmd.type || 'static');
             }
-            console.log(`- Plait-il ??`);            
                 //settings
             for (const key of listeInfo) {
                 stmtKey.run(key.key, key.value);
@@ -72,7 +69,6 @@ export const reloadBotCache = () => {
                 stmtUser.run(user.id, user.name);
             }
         })();
-        console.log(`- ..chauffe doucement....`);
 
         //  Cache de mise à jour
         const newCacheCmd = {};
@@ -97,9 +93,9 @@ export const reloadBotCache = () => {
                     name: cmd.name,
                     type: cmd.type,
                     response: cmd.response,
+                    total_count: cmd.total_count || 0,
                     on_off: cmd.on_off,
-                    patternOriginal: cmd.pattern,
-                    total_count: cmd.total_count || 0
+                    patternOriginal: cmd.pattern
                 };
             }
         }
@@ -120,14 +116,12 @@ export const reloadBotCache = () => {
             includeScore: true,
             ignoreLocation: true
         });
-        console.log(`- ça chauffe ?? Le soleil ? ça chauffe, qu'il me dit !!`);
 
         //  Rassemblement des cache
         cmdCache.settings = newCacheKey;
         cmdCache.commandes = newCacheCmd;
         cmdCache.jeux = nouvelIndexFuse;
     } catch (err) {
-        console.log(`[ça pue du cul...] reloadBotCache vas pas bien :`, err.message);
     }
 };
 
@@ -142,6 +136,7 @@ export const updateCacheCmdDirect = (trigger, objCommande) => {
         response: objCommande.response,
         category: objCommande.category,
         on_off: objCommande.on_off,
+        total_count: objCommande.total_count || 0,
         patternOriginal: objCommande.pattern
     };
 };

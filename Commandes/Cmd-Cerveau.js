@@ -15,7 +15,9 @@ const antiDoublonTimout = 1000;
 let lastMessageSentTime = 0;
 const lastSentMessages = new Map();
 
-    //  Application
+const stmtTotalCount = dbViral.prepare(`UPDATE commandes SET total_count = COALESCE(total_count, 0) + 1 WHERE name = ?`);
+
+    //  Réponse
 export const pushToBuffer = (client, channel, text) => {
     if (!text) return;
 
@@ -138,6 +140,7 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
                     if (isMod || isStreamer) {
                         await cmdModeration(messageBrut, pseudo, runnerCible, client, channel);
                         cmd.total_count = (cmd.total_count || 0) + 1;
+                        stmtTotalCount.run(cmd.name);
                     }
 
                     return null;
@@ -147,6 +150,7 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
                     retourBrute = await getPbWrResponse(trigger, inputRestant, runnerCible, client, channel);
                     finalId = 'speedrun-engine';
                     cmd.total_count = (cmd.total_count || 0) + 1;
+                    stmtTotalCount.run(cmd.name);
                     break;
 
         //  Commande statique
@@ -158,6 +162,7 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
                     retourBrute = cmd.response;
                     finalId = 'static-command';
                     cmd.total_count = (cmd.total_count || 0) + 1;
+                    stmtTotalCount.run(cmd.name);
                     break;
 
         //  Envoie automatique

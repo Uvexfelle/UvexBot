@@ -105,7 +105,7 @@ export const getPbWrResponse = async (trigger, inputRestant, runnerCible, live, 
 
             else if (ecart >= 3600) {
                 console.log(`¢ Jeu obsolète de plus d'1h, on remet tout ça à jour :3`);
-                syncGame(gameId, usersId, parent, enfantsIds).catch(err => {
+                syncGame(gameId, usersId, parentId, enfantsIds).catch(err => {
                     console.error(`[ça pue du cul...] Maj de jeu vas pas bien :`, err);
                 });
             }
