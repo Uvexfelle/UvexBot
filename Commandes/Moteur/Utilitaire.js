@@ -19,7 +19,6 @@ export const getIdFromText = (input, runnerCible) => {
     const words = cleanInput.split(/\s+/);
 
         //  Jeux
-    console.log(`--- GameFinder ---`);
     let absoluteBestGame = null;
     let gameFirstIndex = -1;
     let gameLastIndex = -1;
@@ -68,7 +67,6 @@ export const getIdFromText = (input, runnerCible) => {
 
     const afterGameWords = words.filter((_, idx) => idx < gameFirstIndex || idx >=gameLastIndex);
     const afterGameStr = afterGameWords.join(' ');
-    console.log(`|| chaine de base : "${cleanInput}" || Jeux trouvé : ${gameName} ||\n--- Find Category ----\n|| Mots restants : "${afterGameStr}" ||`);
 
     let uid = null;
     let catFirstIndex = -1;
@@ -183,7 +181,7 @@ export const getIdFromText = (input, runnerCible) => {
 
     const texteRestant = tableauMotsFin.join(' ').trim();
 
-    console.log(`|| Base : "${input}" Reste : "${texteRestant}" ||`);
+    console.log(`| Base : "${input}" -> Reste : "${texteRestant}" | Jeu trouvé : ${gameName}, id trouvé : ${uid || gId}`);
     return { game_id: gId, uid, texteRestant };
 };
         //  Fallback (dernier Pb)
@@ -346,6 +344,10 @@ export const timeToSec = (hms) => {
         return (parts[0] * 3600) + (parts[1] * 60) + parts[2] + msEnSec;
     }
 
+    if (parts.length === 2) {
+        return (parts[0] * 60) + parts[1] + msEnSec;
+    }
+
     return parts[0] + msEnSec;
 };
 
@@ -380,7 +382,7 @@ export const formatDate = (dateRow) => {
 
     if (blocks.length < 2 || blocks.length > 3) return null;
 
-    const day = parseInt(blocks[1], 10);
+    const day = parseInt(blocks[0], 10);
     const month = parseInt(blocks[1], 10);
     let year = new Date().getFullYear();
 
@@ -396,7 +398,11 @@ export const formatDate = (dateRow) => {
         computedDate.getMonth() === (month - 1) &&
         computedDate.getDate() === day
     ) {
-        return computedDate.toLocaleDateString('fr-CA');
+        const mm = month.toString().padStart(2, '0');
+        const jj = day.toString().padStart(2, '0');
+        const dateISO = `${year}-${mm}-${jj}`;
+
+        return dateISO;
     }
 
     return null;

@@ -214,7 +214,7 @@ export const syncGame = async (gId, userId, parent, adelphes, callbacks = {}) =>
             //remplacement
     const stmtReplacePb = dbBigData.prepare(`
         UPDATE current_records
-        SET pb_src_time = ?, pb_manual_time = NULL, pb_date = ?, pb_rank = ?, pb_video = ?, last_update = ?
+        SET pb_src_time = ?, pb_manual_time = NULL, pb_date = ?, pb_rank = ?, predicted_rank = NULL, pb_video = ?, last_update = ?
         WHERE runner_id = ? AND uid = ?
     `);
             //actuel
@@ -314,11 +314,21 @@ export const syncGame = async (gId, userId, parent, adelphes, callbacks = {}) =>
                 const localPb = stmtActuelPb.get(usrId, uid);
 
                 if (localPb) {
-                    if (srcDate === localPb.pb_date) {
+                    const dSrcDate = new Date(srcDate);
+                    const dLocalDate = new Date(localPb.pb_date);
+
+                    if (dSrcDate.getTime() === dLocalDate.getTime()) {
                         stmtUpdatePb.run(srcTime, srcRank, srcVideo, timeNow, usrId, uid);
-                    } else {
+                    }
+
+                    else if (dSrcDate < dLocalDate) {
+                        continue;
+                    }
+
+                    else if (dSrcDate > dLocalDate) {
                         const oldge = localPb.pb_src_time ?? localPb.pb_manual_time;
                         const isPb2 = localPb.pb_rank === 1 ? 2 : 1;
+
                         stmtHistorique.run(uid, usrId, pbName.username, localPb.pb_date, oldge, srcVideo, isPb2);
                         stmtReplacePb.run(srcTime, srcDate, srcRank, srcVideo, timeNow, usrId, uid);
                     }

@@ -90,7 +90,9 @@ Bot fonctionnelle mais avant le dashboard web
 * Bug
     - AddPb
     - Titre to uid
-    - SpoilTime
+    - SpoilTime === type.speedrun
+    - Smo any% = smo nes ??
+    - sm64
 
   J'ai le temps chil ----
     - Auto commandes
