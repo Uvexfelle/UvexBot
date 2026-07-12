@@ -3,37 +3,39 @@
 * Insérer les données de base tel que le .env (infos à remplir dans le env.md)
     -https://twitchtokengenerator.com/
 
-* Mise en place des base de données SQL avec le init-db
-
 * Remplissage du config :
     - Commandes simple qui ce déclanche avec le premier mot du msg
         Liste des déclencheur possible :
             - {spoiltime} Permet de générer un temps proche du pb 
             - {user} Permet de @ l'utilisateurice
             - {channel} Permet de dire le nom de la chaine de streaming
+            - {randomX} Permet de donner un nombre random entre 0 et X ou entre X et X si X = x:y
 
     - Commandes automatique, les case sont utilisé différement :
         -Name: Nom de la commande
         -Pattern: Trois valuers numéraire séparer par des virgules 'Temps minimum pour ce déclancher,Nombre de msg d'espace nécessaire, Priorité
             si 2 msg automatique doivent s'envoyer en même temps alors celui avec la priorité la plus haute seras envoyé et l'autre seras retransmis après un cooldown
-        -Alias: Nom de la commande simple à effectuer (laisser la case suivante vide si celle la est remplie)
-        -Response: Message à dire et les déclancheur du haut sont effectife
+        -Response: Message à dire et les déclancheur du haut sont effectife, peut dire le message d'une commande en y mettant un pattern
         -Type: Auto
 
+    - Information Speedrun.com :
+        IL FAUT REMPLIRE AU MOINS UNE ENTRÉE dans config/Src-data.js dans listeUsers
+            -Name: pseudo twitch en minuscule
+            -id: l'id users de speedrun.com peut être trouvé avec l'api `https://www.speedrun.com/api/v1/users/'votre pseudo src'`
 * Remplissage des données via speedrun.com :
-    -Premier-fetch :
-        Premier fetch vas prendre la liste des utilisateurs et remplir tout les pb posté sur speedrun.com, iel vas aussi enregistré tout les jeux avec pb, regardé si des jeux sont enregistré dans config. Iel vas aussi trouvé tout les jeux liée pour remplir le fichier jeux-découvert dans le dossier data avec toutes les infos pour remplir manuellement src-data plus tard. Iel vas ensuite remplir les wr pour toutes les catégories et les listé pour les lié au pb trouvé plus haut.
+    - Setup des données avec le setup.data "node Setup/setup-data.js" qui vas créer et remplire toutes les données trouvable sur internet et synchroniser avec les donnée remplie aux préalable dans le dossier config
+        -"-current" pour skipper la recherche des jeux et des pb actuels
+        -"-history" pour skipper la recherche des historiques de toutes les caté stocker
 
-    -History-fetch :
-        History fetch vas prendre la liste des utilisateur pour récupérer tout les anciens pb des joueureuses. Iel vas ensuite récupérer tout l'historique des wr pour toutes les catégories des jeux suivit.
-    
+        Préférable de le faire une fois complète (prend du temps) et le refaire avec un -current
+
 * Surnmon des jeux :
     La liste de jeux-découvert permet de pré-remplir le fichier src-data pour pouvoir y ajouter des abréviation ou des surnoms pour des jeux
 
 #   Étape 2 :
 ##  Lancement et fonctiennement du bot
 
-* Lancement du bot avec le server.js 
+* Lancement du bot avec le server.js "nodemon --ignore 'Data/*'  Setup/server.js"
 
 
 #   Regex :
@@ -71,7 +73,6 @@
 
     * Redondance
         répond à la question "tu en as pas marre de faire la même choses ?"
-___________________________________________________________________________________________
 
 #   Commandes détaillé
 
@@ -85,18 +86,17 @@ ________________________________________________________________________________
 
 #   RoadMap
 ##  0.5
-Bot fonctionnelle mais avant le dashboard web
+Bot fonctionnelle mais sans le dashboard web
 
 * Bug
-    - AddPb
     - Titre to uid
-    - SpoilTime === type.speedrun
+    - Nom inconnu pour jeu sans caté dans !addpb
     - Smo any% = smo nes ??
-    - sm64
 
   J'ai le temps chil ----
     - Auto commandes
 * À implémenter
+    - !delPb pour supprimer un temps et revenir sur le dernie en date
 
 * À meditaire
     - Trouver un moyen d'harmoniser les réponses avec les templates

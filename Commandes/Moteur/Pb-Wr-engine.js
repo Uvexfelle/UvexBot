@@ -1,6 +1,6 @@
 import { syncGame } from "../../Api/SRC/src-fetch.js";
 import { dbBigData, dbViral } from "../../Setup/Utilitaires/loader.js";
-import { displayDate, getIdFromText, getNamesFromIds, secToTime } from "./Utilitaire.js";
+import { displayDate, getIdFromText, getNamesFromIds, getTitreUid, secToTime } from "./Utilitaire.js";
 
 
 //  Réponse
@@ -42,6 +42,12 @@ const TEMPLATES = {
         pasDeLeaderboard: `C'est ff j'ai pas de leaderboard la`,
         aucunUid: `Dsl, je ne sais pas quel leaderboard tu veux voir (Ex: !top 5 smo any)`,
         resultat: (limit, nomJeu, nomCat, top) => `Top ${limit} ${nomJeu} ${nomCat} : ${top}`,
+    },
+    //  Spoiltime
+    spoiltime: {
+        pasEnSpeedrun: `Est-ce qu'on est vraiment en speedrun ?? si c'est le cas je suis dsl je ne peux pas t'aider...`,
+        erreur: `PERDU`,
+        resultat: (nomJeu, nomCat, estimation) => `Je peux dire avec certitude que sur ${nomJeu} ${nomCat}, il vas finir ça run en ...... ${estimation} OMG OMG OMG !!!!!`
     }
 };
 
@@ -94,7 +100,7 @@ export const getPbWrResponse = async (cmdName, inputRestant, runnerCible, live, 
             const ecart = timeNow - lastStamp;
 
             if (ecart >= 64800) {
-                console.log(`¢ Jeu obsolète de plus de 12h !!!! Synchronisation forcé pour ${gameId}`);
+                console.log(`¢ Jeu obsolète de plus de 18h !!!! Synchronisation forcé pour ${gameId}`);
                 try {
                     await syncGame(gameId, usersId, parentId, enfantsIds);
                 } catch (err) {
@@ -616,6 +622,125 @@ export const getPbWrResponse = async (cmdName, inputRestant, runnerCible, live, 
             //  Réponse
                 return rawOutPut(TEMPLATES.top.resultat(limitTemplateLabel, gameName, catName, topText), prefix, activeDrapeau);
 
+            }
+
+        //  SpoilTime
+            case 'SpoilTime': {
+                let res = null;
+
+            //  Catégorie via titre
+                if (!gameId && !uid) {
+                    uid = getTitreUid(live);
+                    res = dbBigData.prepare(`
+                        SELECT r.pb_manual_time, r.pb_src_time, r.pb_rank, r.predicted_rank, r.uid,
+                            e.game_id, e.cat_pop, e.lead_json, e.variables_json, w.wr_time
+                        FROM current_records r
+                        JOIN src_entities e ON r.uid = e.uid
+                        JOIN world_records w ON r.uid = w.uid
+                        WHERE r.runner_id = ? AND r.uid = ?
+                        LIMIT 1
+                    `).get(runnerCible, uid);
+                }
+
+            //  Catégorie popularity
+                if (!res && gameId) {
+                    res = dbBigData.prepare(`
+                        SELECT r.pb_manual_time, r.pb_src_time, r.pb_rank, r.predicted_rank, r.uid,
+                            e.game_id, e.cat_pop, e.lead_json, e.variables_json, w.wr_time
+                        FROM current_records r
+                        JOIN src_entities e ON r.uid = e.uid
+                        JOIN world_records w ON r.uid = w.uid
+                        WHERE r.runner_id = ? AND e.game_id = ?
+                        ORDER BY e.cat_pop DESC, r.pb_date DESC
+                        LIMIT 1
+                    `).get(runnerCible, gameId);
+                }
+
+            //  Family
+                if (!res && gameId) {
+                    const gameRow = dbViral.prepare(`SELECT parent_id FROM jeux WHERE game_id = ?`).get(gId);
+                    const rootId = gameRow?.parent_id ? gameRow.parent_id : gId;
+
+                    const familyRows = dbViral.prepare(`
+                        SELECT game_id FROM jeux
+                        WHERE game_id = ? OR parent_id = ?
+                        OR (enfants_id IS NOT NULL AND LOWER(',' || enfants_id || ',') LIKE LOWER('%,' || ? || ',%'))
+                    `).all(rootId, rootId, rootId);
+
+                    const familyIds = familyRows.map(r => r.game_id);
+                    if (familyIds.length > 0) {
+                        const placeholders = familyIds.map(() => '?').join(',');
+                        res = dbBigData.prepare(`
+                            SELECT r.pb_manual_time, r.pb_src_time, r.pb_rank, r.predicted_rank, r.uid,
+                                e.game_id, e.cat_pop, e.lead_json, e.variables_json, w.wr_time
+                            FROM current_records r
+                            JOIN src_entities e ON r.uid = e.uid
+                            JOIN world_records w ON r.uid = w.uid
+                            WHERE r.runner_id = ? AND e.game_id IN (${placeholders})
+                            ORDER BY e.cat_pop DESC, r.pb_date DESC
+                            LIMIT 1
+                        `).get(runnerCible, ...familyIds);
+                     }
+                }
+                if (!res) return rawOutPut(TEMPLATES.spoiltime.pasEnSpeedrun, prefix, activeDrapeau);
+
+                const { gameName, catName } = getNamesFromIds({ gId: res.game_id, uid: res.uid });
+
+            //  Tirage aux sort
+                //  Infos numéraire
+                const board = JSON.parse(res.lead_json);
+                const total = res.cat_pop || 1;
+                const myRank = res.pb_rank || res.predicted_rank || total;
+                const myPb = res.pb_src_time || res.pb_manual_time;
+                const wrTime = res.wr_time;
+
+                const gapToWr = myPb - wrTime;
+                const qualityRatio = myRank / total;
+                const bulle = (gapToWr * qualityRatio) + (wrTime * 0.01);
+
+                let timeMin = myPb - bulle;
+                const timeMax = myPb + bulle;
+
+                let finalMin = timeMin;
+                if (timeMin < wrTime) {
+                    const diffPerte = timeMax - myPb;
+                    finalMin = wrTime - diffPerte;
+                }
+
+                const rankChaos = Math.min(total, myRank * 2);
+                const timeChaos = board.find(p => p.rank === rankChaos)?.time || (myPb + (bulle * 5));
+                let reservoir = [];
+
+                //  Algorithm de génération de nombre
+                const generatTickets = (nombre, min, max, pivot) => {
+                    for (let i = 0; i < nombre; i++) {
+                        const estUnGain = Math.random() < 0.75;
+                        let ticket;
+                        if (estUnGain) {
+                            ticket = Math.random() * (pivot - min) + min;
+                        } else {
+                            ticket = Math.random() * (max - pivot) + pivot;
+                        }
+                        reservoir.push(ticket);
+                    }
+                };
+
+                //  Tirage des possibilité
+                generatTickets(500, finalMin, timeMax, myPb);
+                generatTickets(500, wrTime, timeChaos, myPb);
+
+                const tiragePeloton = Math.random() < 0.75;
+                let finalSec;
+
+                //  Tirage final
+                if (tiragePeloton) {
+                    finalSec = reservoir[Math.floor(Math.random() * 500)];
+                } else {
+                    finalSec = reservoir[500 + Math.floor(Math.random() * 500)];
+                }
+
+            //  Réponse
+                return rawOutPut(TEMPLATES.spoiltime.resultat(gameName, catName, secToTime(finalSec)), prefix, activeDrapeau);
             }
         }
 

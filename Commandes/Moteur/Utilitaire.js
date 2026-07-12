@@ -1,7 +1,6 @@
 import { dbViral, dbBigData, cmdCache } from "../../Setup/Utilitaires/loader.js";
 import Fuse from "fuse.js";
 import { gameDetails } from "../../config/Game-data.js";
-import { getSpoilTime } from "./Cmd-basique.js";
 
 //  Traduction des Ids <--> Text
 
@@ -422,11 +421,6 @@ export const formatResponse = (text, channel, runnerCible, pseudo, activeDrapeau
     if (!text) return '';
     let texteFinal = text;
 
-    //  SpoilTime
-    if (texteFinal.includes('{spoiltime}')) {
-        texteFinal = texteFinal.replace('{spoiltime}', getSpoilTime(runnerCible));
-    }
-
     //  Générateur de nombre
     if (texteFinal.includes('{random')) {
         texteFinal = texteFinal.replace(/\{random:(\d+)(?::(\d+))?\}/gi, (match, a, b) =>{
@@ -467,9 +461,6 @@ export const formatResponse = (text, channel, runnerCible, pseudo, activeDrapeau
         }
         return match;
     });
-
-    //  Clean de caté inconnue
-    texteFinal = texteFinal.replace(/Catégorie inconnue/gi, '');
 
     return texteFinal.replace(/\s+/g, ' ').trim();
 };

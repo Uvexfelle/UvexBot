@@ -72,7 +72,7 @@ export const listeCommandes = [
     //  Speedrun
     {name: 'Langue', pattern: '!langue', resp: 'je joue en {game_lang} parce que les dialogues sont plus rapide', category: 'speedrun', type: 'static'},
     {name: 'Tuto', pattern: '!tuto', resp: 'Je fais des tutos speedrun sur mon Tiktok ! (y\'a une playlist) https://www.tiktok.com/@lamatrak_ Sur mon Youtube aussi ! https://www.youtube.com/@Lamatrak_/playlists', category: 'speedrun', type: 'static'},
-    {name: 'SpoilTime', pattern: '!spoilTime,!st,!timerun,!tr', resp: 'je peux dire avec certitude que sur {spoiltime} !!!!!', category: 'speedrun', type: 'static'},
+    {name: 'SpoilTime', pattern: '!spoilTime,!st,!timerun,!tr', resp: '', category: 'speedrun', type: 'speedrun'},
     {name: 'Pb', pattern: '!pb', resp: '', category: 'speedrun', type: 'speedrun'},
     {name: 'Wr', pattern: '!wr', resp: '', category: 'speedrun', type: 'speedrun'},
     {name: 'Pb progress', pattern: '!pbprogress', resp: '', category: 'speedrun', type: 'speedrun'},
