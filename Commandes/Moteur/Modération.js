@@ -74,7 +74,7 @@ export const cmdModeration = async (userMessage, pseudo, runnerCible, client, ch
 
                     //  FallBack pas de catégorie
                 if (!target.uid && target.game_id) {
-                    const { gameName } = getNamesFromIds({ game_id: target.game_id });
+                    const { gameName } = getNamesFromIds({ gId: target.game_id });
                     pushToBuffer(client, channel, `@${pseudo}, j'ai trouvé le jeu ${gameName} mais n'est pas réussi à trouvé de caté`);
                     return;
                 }

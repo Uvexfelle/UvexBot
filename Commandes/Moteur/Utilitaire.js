@@ -37,13 +37,39 @@ export const getIdFromText = (input, runnerCible) => {
             const longeurCible = candidate.length;
             const dynamicThreshold = longeurCible <= 5 ? 0.12 : 0.38;
             const boostLongeur = longeurCible * 0.005;
-            const isRootGame = !bestGameMatch.item.parent_id || bestGameMatch.item.parent_id === bestGameMatch.item.game_id;
-            const scorePondere = isRootGame ? (bestGameMatch.score - 0.15 - boostLongeur) : (bestGameMatch.score - boostLongeur);
+            
+            let bonusAcronymeSuffix = 0;
+            let targetGameId = bestGameMatch.item.game_id;
+            const item = bestGameMatch.item;
+
+            const isRootGame = !item.parent_id || item.parent_id === item.game_id;
+
+            if (isRootGame) {
+                const parentNames = item.name.split(',').map(s => s.trim().toLowerCase());
+                const parentShort = [...parentNames].sort((a, b) => a.length - b.length)[0];
+
+                const enfantsRows = dbViral.prepare(`SELECT game_id, name FROM jeux WHERE parent_id = ? AND game_id != ?`).all(item.game_id, item.game_id);
+
+                for (const enfant of enfantsRows) {
+                    const enfantNames = enfant.name.split(',').map(s => s.trim().toLowerCase());
+                    const suffixEnfant = enfantNames[0].replace(parentNames[0], '').replace(/^[:\-\s]+/, '').trim();
+                    const chaineVirtuelleAttendue = `${parentShort} ${suffixEnfant}`.trim();
+                    const chatCompletContientLeMot = cleanInput.toLowerCase().includes(chaineVirtuelleAttendue);
+
+                    if (chatCompletContientLeMot && suffixEnfant.length > 0) {
+                        targetGameId = enfant.game_id;
+                        bonusAcronymeSuffix = 1.0;
+                        break;
+                    }
+                }
+            }
+
+            const scorePondere = isRootGame ? (bestGameMatch.score - 0.15 - boostLongeur - bonusAcronymeSuffix) : (bestGameMatch.score - boostLongeur);
 
             if (bestGameMatch.score < dynamicThreshold) {
                 if (!absoluteBestGame || scorePondere < absoluteBestGame.scorePondere) {
                     absoluteBestGame = {
-                        id: bestGameMatch.item.game_id,
+                        id: targetGameId,
                         scorePondere,
                         start,
                         end
@@ -58,11 +84,12 @@ export const getIdFromText = (input, runnerCible) => {
     }
 
         //  Catégorie
-    const gId = absoluteBestGame.id;
+    let gId = absoluteBestGame.id;
     gameFirstIndex = absoluteBestGame.start;
     gameLastIndex = absoluteBestGame.end;
     const gameWords = words.slice(gameFirstIndex, gameLastIndex);
     const { gameName } = getNamesFromIds({ gId });
+    console.log(`gameName : ${gameName}`);
 
     const afterGameWords = words.filter((_, idx) => idx < gameFirstIndex || idx >=gameLastIndex);
     const afterGameStr = afterGameWords.join(' ');
@@ -83,7 +110,7 @@ export const getIdFromText = (input, runnerCible) => {
             const placeholder = familyIds.map(() => '?').join(',');
 
             const entities = dbBigData.prepare(`
-                SELECT uid, variables_json
+                SELECT uid, game_id, variables_json
                 FROM src_entities
                 WHERE game_id IN (${placeholder})
                 ORDER BY cat_pop DESC
@@ -102,6 +129,7 @@ export const getIdFromText = (input, runnerCible) => {
 
                     return {
                         uid: ent.uid,
+                        game_id: ent.game_id,
                         searchString: `${catLabel} ${subCatTrue}`.trim(),
                         allTerms: allTerms.trim()
                     };
@@ -110,6 +138,7 @@ export const getIdFromText = (input, runnerCible) => {
                 const catFinder = new Fuse(searchPool, {keys: ['searchString'], threshold: 0.4, ignoreLocation: true, includeScore: true});
 
                 let bestCatMatch = null;
+                let tousLesMatchsValides = [];
                 for (let start = 0; start < words.length; start++) {
                     if (start >= gameFirstIndex && start < gameLastIndex) continue;
 
@@ -119,33 +148,58 @@ export const getIdFromText = (input, runnerCible) => {
 
                         if (catResults.length === 0) continue;
 
-                        const matchCat = catResults[0];
+                        catResults.forEach(matchCat => {
+                
+                            const longeurCatCible = candidate.length;
+                            const boostLongeurCat = longeurCatCible * 0.05;
 
-                        const longeurCatCible = candidate.length;
-                        const boostLongeurCat = longeurCatCible * 0.05;
-                        const scorePondere = matchCat.score - boostLongeurCat;
+                            const jeuTrouve = (matchCat.item.game_id === gId);
+                            const malusFamille = jeuTrouve ? 0 : 0.50;
 
-                        if (matchCat.score < 0.4) {
-                            if (!bestCatMatch || scorePondere < bestCatMatch.scorePondere) {
-                                bestCatMatch = {
-                                    uid: matchCat.item.uid,
-                                    scorePondere,
+                            const scorePondere = matchCat.score - boostLongeurCat + malusFamille;
+
+                            if (matchCat.score < 0.6 && scorePondere < 0.4) {
+                                tousLesMatchsValides.push({
+                                    txt: candidate,
+                                    label: matchCat.item.searchString,
+                                    score: scorePondere,
+                                    uid: matchCat.item.game_id,
+                                    allTerms: matchCat.item.allTerms,
                                     start,
-                                    end,
-                                    allTerms: matchCat.item.allTerms
-                                };
+                                    end
+                                });
+              
+                                if (!bestCatMatch || scorePondere < bestCatMatch.scorePondere) {
+                                    bestCatMatch = {
+                                        uid: matchCat.item.uid,
+                                        game_id: matchCat.item.game_id,
+                                        scorePondere,
+                                        start,
+                                        end,
+                                        allTerms: matchCat.item.allTerms
+                                    };
+                                }
                             }
-                        }
+                        });
                     }
                 }
+
+                tousLesMatchsValides.sort((a, b) => a.score - b.score);
+                // 👑 TON LOG EN UNE PHRASE : Sécurisé avec des fallback au cas où il y a moins de 3 matchs trouvés !
+                const m1 = tousLesMatchsValides[0] ? `[#1 ${tousLesMatchsValides[0].txt} -> ${tousLesMatchsValides[0].label} (${tousLesMatchsValides[0].score.toFixed(2)})]` : 'Vide';
+                const m2 = tousLesMatchsValides[1] ? `[#2 ${tousLesMatchsValides[1].txt} -> ${tousLesMatchsValides[1].label} (${tousLesMatchsValides[1].score.toFixed(2)})]` : 'Vide';
+                const m3 = tousLesMatchsValides[2] ? `[#3 ${tousLesMatchsValides[2].txt} -> ${tousLesMatchsValides[2].label} (${tousLesMatchsValides[2].score.toFixed(2)})]` : 'Vide';
+                
+                console.log(`|¢|¢ TOP 3 MATCHS ➔ ${m1} || ${m2} || ${m3}`);
+
 
                 if (bestCatMatch) {
                     uid = bestCatMatch.uid;
                     catFirstIndex = bestCatMatch.start;
                     catLastIndex = bestCatMatch.end;
                     usedCatWords = words.slice(catFirstIndex, catLastIndex);
-
                     allCateLabel = bestCatMatch.allTerms.split(/\s+/);
+                    gId = bestCatMatch.game_id;
                 }
             }
         }
