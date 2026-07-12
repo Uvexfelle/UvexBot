@@ -630,7 +630,7 @@ export const getPbWrResponse = async (cmdName, inputRestant, runnerCible, live, 
 
             //  Catégorie via titre
                 if (!gameId && !uid) {
-                    uid = getTitreUid(live);
+                    uid = getTitreUid(live, runnerCible);
                     res = dbBigData.prepare(`
                         SELECT r.pb_manual_time, r.pb_src_time, r.pb_rank, r.predicted_rank, r.uid,
                             e.game_id, e.cat_pop, e.lead_json, e.variables_json, w.wr_time
