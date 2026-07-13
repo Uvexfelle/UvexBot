@@ -70,7 +70,7 @@ export const handleAutoTicker = async (client, horlogeTicks, globalChatCounter) 
                 const channel = client.getChannels()[0] || `#${process.env.TWITCH_CHAN}`;
 
                 const msgPropre = formatResponse(messageFinal, channel, null, null, null);
-                pushToBuffer(client, channel, msgPropre);
+                pushToBuffer(client, channel, auto, msgPropre);
 
                 const botName = client.getUsername();
                 console.log(`[Ticker auto] ${botName} : ${msgPropre}`);

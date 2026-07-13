@@ -417,7 +417,7 @@ export const getPbWrResponse = async (cmdName, inputRestant, runnerCible, live, 
 
                     dateDebutSql = `${anneeDebut}-${moisDebut}-01`;
                     dateFinSql = `${anneeFin}-${moisFin}-31`;
-                    labelPeriode = `entre le ${moisDebut}/${anneeDebut.slice(-2)} et le ${moisFin}/${anneeFin.slice(-2)}`;
+                    labelPeriode = `entre le ${moisDebut}/${anneeDebut} et le ${moisFin}/${anneeFin}`;
                 }
 
                 //  Format AA - AA

@@ -1,4 +1,4 @@
-import { cmdCache, dbViral, getCurrentTimeUTC2, IS_CMD_LOCK } from "../Setup/Utilitaires/loader.js";
+import { cmdCache, dbViral, getCurrentTimeUTC2, IS_CMD_LOCK, IS_DEV_MODE } from "../Setup/Utilitaires/loader.js";
 import { formatResponse, getSrcId } from "./Moteur/Utilitaire.js";
 import { getPbWrResponse } from "./Moteur/Pb-Wr-engine.js";
 import { cmdModeration } from "./Moteur/Modération.js"
@@ -11,14 +11,16 @@ const messageQueue = [];
 let isSending = false;
 const rateLimiteInterval = 367;
 const antiDoublonTimout = 1000;
+const cmdTimeout = 30000;
 
 let lastMessageSentTime = 0;
 const lastSentMessages = new Map();
+const lastSentCmd = new Map();
 
 const stmtTotalCount = dbViral.prepare(`UPDATE commandes SET total_count = COALESCE(total_count, 0) + 1 WHERE name = ?`);
 
     //  Réponse
-export const pushToBuffer = (client, channel, text) => {
+export const pushToBuffer = (client, channel, cmd, text) => {
     if (!text) return;
 
         //  Protection anti doublons
@@ -54,7 +56,7 @@ export const pushToBuffer = (client, channel, text) => {
 
     //  Videnge d'historique
 const processQueue = (client) => {
-    if (messageQueue.length = 0) {
+    if (messageQueue.length === 0) {
         isSending = false;
         return;
     }
@@ -134,6 +136,17 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
         if (!retourBrute && !trigger) return null;
 
         if (!retourBrute && cmd && cmd.on_off === 0) {
+            const cmdHistory = lastSentCmd.get(channel) || {};
+            const lastCmdTime = cmdHistory[cmd.name] || 0;
+            const tempsEcoule = Date.now() - lastCmdTime;
+            const cmdNoCd = (cmd.name.toLowerCase() === 'pb' || cmd.name.toLowerCase() === 'wr') || cmd.type.toLowerCase() === 'modération';
+
+            if (IS_DEV_MODE === false && tempsEcoule < cmdTimeout && !cmdNoCd) {
+                return null;
+            }
+            cmdHistory[cmd.name] = Date.now();
+            lastSentCmd.set(channel, cmdHistory);
+
             switch (cmd.type.toLowerCase()) {
 
         //  Modération
@@ -142,7 +155,7 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
                     const isStreamer = tags.badges?.broadcaster === '1';
 
                     if (isMod || isStreamer) {
-                        await cmdModeration(messageBrut, pseudo, runnerCible, client, channel);
+                        await cmdModeration(messageBrut, pseudo, cmd, runnerCible, client, channel);
                         cmd.total_count = (cmd.total_count || 0) + 1;
                         stmtTotalCount.run(cmd.name);
                     }
@@ -181,7 +194,7 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
         if (!texteFinal) return null;
 
     //  Envoie via buffer
-        pushToBuffer(client, channel, texteFinal);
+        pushToBuffer(client, channel, cmd, texteFinal);
 
         return { text: texteFinal, id: finalId };
 

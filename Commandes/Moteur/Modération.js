@@ -33,7 +33,7 @@ function getPredictedRank(uid, newTime) {
 }
 
 //  Commande de la modération
-export const cmdModeration = async (userMessage, pseudo, runnerCible, client, channel) => {
+export const cmdModeration = async (userMessage, pseudo, cmd, runnerCible, client, channel) => {
     try {
 
         //  Nettoyage de l'input
@@ -75,7 +75,7 @@ export const cmdModeration = async (userMessage, pseudo, runnerCible, client, ch
                     //  FallBack pas de catégorie
                 if (!target.uid && target.game_id) {
                     const { gameName } = getNamesFromIds({ gId: target.game_id });
-                    pushToBuffer(client, channel, `@${pseudo}, j'ai trouvé le jeu ${gameName} mais n'est pas réussi à trouvé de caté`);
+                    pushToBuffer(client, channel, cmd, `@${pseudo}, j'ai trouvé le jeu ${gameName} mais n'est pas réussi à trouvé de caté`);
                     return;
                 }
 
@@ -88,7 +88,7 @@ export const cmdModeration = async (userMessage, pseudo, runnerCible, client, ch
                 const currentTimeReference = currentRecord ? (currentRecord.pb_src_time ?? currentRecord.pb_manual_time) : null;
 
                 if (currentTimeReference !== null && timeSec === currentTimeReference && formattedDate === currentRecord.pb_date) {
-                    pushToBuffer(client, channel, `@${pseudo} record déjà enregistré.`);
+                    pushToBuffer(client, channel, cmd, `@${pseudo} record déjà enregistré.`);
                     return;
                 }
 
@@ -97,9 +97,9 @@ export const cmdModeration = async (userMessage, pseudo, runnerCible, client, ch
                 const { gameName, catName } = getNamesFromIds({ uid: target.uid });
 
                 if (currentTimeReference !== null) {
-                    pushToBuffer(client, channel, `${pseudo} On met à jour ${gameName} - ${catName} ${secToTime(currentTimeReference)} avec ${secToTime(timeSec)} ? !confirm pour validé`);
+                    pushToBuffer(client, channel, cmd, `${pseudo} On met à jour ${gameName} - ${catName} ${secToTime(currentTimeReference)} avec ${secToTime(timeSec)} ? !confirm pour validé`);
                 } else {
-                    pushToBuffer(client, channel, `${pseudo} premier pb sur ${gameName} - ${catName} de ${secToTime(timeSec)} ?? !confirm pour validé`);
+                    pushToBuffer(client, channel, cmd, `${pseudo} premier pb sur ${gameName} - ${catName} de ${secToTime(timeSec)} ?? !confirm pour validé`);
                 }
 
                 //  Confirmation
@@ -144,16 +144,16 @@ export const cmdModeration = async (userMessage, pseudo, runnerCible, client, ch
                                 });
 
                                 runTransaction();
-                                pushToBuffer(client, channel, `c'est fait @${pseudo} !!`);
+                                pushToBuffer(client, channel, cmd, `c'est fait @${pseudo} !!`);
                             } catch (sqlErr) {
                                 console.error(`[ça pue du cul...] !addPb transaction sql ne vas pas bien :`, sqlErr.message);
-                                pushToBuffer(client, channel, `ça à foirée cheffe la transaction sql elle pue du cul`);
+                                pushToBuffer(client, channel, cmd, `ça à foirée cheffe la transaction sql elle pue du cul`);
                             }
                         }
 
                 //  Sécurité erreur
                         else if (response === '!cancel') {
-                            pushToBuffer(client, channel, `On arrête tout Noted`);
+                            pushToBuffer(client, channel, cmd, `On arrête tout Noted`);
                             clearTimeout(timeoutId);
                             client.off('message', messageListener);
                         }
