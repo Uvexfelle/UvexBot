@@ -15,9 +15,13 @@ export const listeJeux = [
     { label: 'Mario Kart 8 Deluxe', aliases: ['mk8d'], srcId: '46w0n91r' },
     { label: 'Super Mario 64', aliases: ['sm64'], srcId: 'o1y9wo6q' },
     { label: 'Super Mario 64 Category Extensions', aliases: ['sm64ce'], srcId: 'o1ymwk1q' },
+    { label: 'Super Mario Sunshine', aliases: ['sms'], srcId: 'v1pxjz68' },
+    { label: 'Super Mario Galaxy', aliases: ['smg', 'smg1'], srcId: 'pd0wg21e' },
+    { label: 'Super Mario Galaxy 2', aliases: ['smg2'], srcId: 'kdkzlgdm' },
 
     //Zelda
     { label: 'The Legend of Zelda: Breath of the Wild', aliases: ['botw'], srcId: '76rqjqd8' },
+    { label: 'The Legend of Zelda: Tears of the Kingdom', aliases: ['totk'], srcId: 'v1px9276' },
 
     //Nintendo
     { label: 'Donkey Kong Bananza Category Extensions', aliases: ['dkbce'], srcId: 'ldew83xd' },

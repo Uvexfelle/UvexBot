@@ -23,6 +23,7 @@
             -Name: pseudo twitch en minuscule
             -id: l'id users de speedrun.com peut être trouvé avec l'api `https://www.speedrun.com/api/v1/users/'votre pseudo src'`
 * Remplissage des données via speedrun.com :
+    - faire les maj npm avec "npm install"
     - Setup des données avec le setup.data "node Setup/setup-data.js" qui vas créer et remplire toutes les données trouvable sur internet et synchroniser avec les donnée remplie aux préalable dans le dossier config
         -"-current" pour skipper la recherche des jeux et des pb actuels
         -"-history" pour skipper la recherche des historiques de toutes les caté stocker
@@ -89,9 +90,8 @@
 Bot fonctionnelle mais sans le dashboard web
 
 * Bug
-    - Titre to uid
-    - Nom inconnu pour jeu sans caté dans !addpb
-    - Smo any% = smo nes ??
+- spoiltime ne détecte pas le jeu via le titre....
+- wr sans jeux qui ne réponds rien
 
   J'ai le temps chil ----
     - Auto commandes

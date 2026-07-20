@@ -141,11 +141,13 @@ export const RegexEngine = (q) => {
         return {
             trigger: '',
             input: getRandomResponse([
-                `{user} Lama n'aime pas faire les 100%`,
-                `{user} Le 100% ? Très peu pour Lama lamatMdr `,
-                `C'est un peu long le 100% non lamatHein ? Je vais laisser ça aux autres. lamatPet `,
-                `{user} 100% ? Non je veux : "Finir, vite."`,
-                `Lama fini les jeu vite {user} , pas à 100% lamatCool `
+                  ``,
+                  ``,
+//                `{user} Lama n'aime pas faire les 100%`,
+  //              `{user} Le 100% ? Très peu pour Lama lamatMdr `,
+    //            `C'est un peu long le 100% non lamatHein ? Je vais laisser ça aux autres. lamatPet `,
+      //          `{user} 100% ? Non je veux : "Finir, vite."`,
+        //        `Lama fini les jeu vite {user} , pas à 100% lamatCool `
             ]),
             drapeau: 'finalMsg'
         };
