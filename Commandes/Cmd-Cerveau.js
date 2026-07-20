@@ -109,29 +109,29 @@ export const getBotResponse = async (userMessage, channelName, live, client, cha
         let cmd = cmdCache.commandes[trigger];
 
         //  Regex
-        const regexMatch = RegexEngine(messageBrut);
-        activeDrapeau = regexMatch?.drapeau;
+//        const regexMatch = RegexEngine(messageBrut);
+//        activeDrapeau = regexMatch?.drapeau;
 
         // Regex trouvé
-        if (regexMatch) {
-            //  Réponse direct d'une regex
-            if (activeDrapeau === 'finalMsg') {
-                retourBrute = regexMatch.input;
-                finalId = 'regex-direct';
+//        if (regexMatch) {
+  //          //  Réponse direct d'une regex
+    //        if (activeDrapeau === 'finalMsg') {
+      //          retourBrute = regexMatch.input;
+        //        finalId = 'regex-direct';
             //  Détection de commandes
-            } else if (regexMatch.trigger) {
-                //  via le trigger
-                if (cmd) {
-                    inputRestant = words.slice(1).join(' ');
-                    activeDrapeau = 'inconnu';
+//            } else if (regexMatch.trigger) {
+  //              //  via le trigger
+    //            if (cmd) {
+      //              inputRestant = words.slice(1).join(' ');
+        //            activeDrapeau = 'inconnu';
                 //  via language naturel
-                } else {
-                trigger = regexMatch.trigger.toLowerCase();
-                inputRestant = regexMatch.input;
-                cmd = cmdCache.commandes[trigger];
-                }
-            }
-        }
+//                } else {
+  //              trigger = regexMatch.trigger.toLowerCase();
+    //            inputRestant = regexMatch.input;
+      //          cmd = cmdCache.commandes[trigger];
+        //        }
+          //  }
+//        }
 
         if (!retourBrute && !trigger) return null;
 
