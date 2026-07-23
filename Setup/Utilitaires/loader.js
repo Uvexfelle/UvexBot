@@ -148,7 +148,7 @@ export const removeCacheCmdDirect = (trigger) => {
 //  Arrêt des commandes
 export const IS_CMD_LOCK = true;
 //  Dérivation pour test
-export const IS_DEV_MODE = true;
+export const IS_DEV_MODE = false;
 //  Joint channel id src
 export const getTargetRunner = (channel) => {
     const chan = (channel || '').toLowerCase().replace('#', '');

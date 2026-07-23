@@ -1,6 +1,6 @@
 import { client } from "tmi.js";
 import { dbViral, dbBigData } from "../../Setup/Utilitaires/loader.js";
-import { formatResponse, getSrcId, secToTime, getTitreUid, getIdFromText, getNamesFromIds } from "./Utilitaire.js";
+import { formatResponse, getSrcId, secToTime, getIdFromText, getNamesFromIds } from "./Utilitaire.js";
 
 //  Automatique
 const cachePatterns = {};
