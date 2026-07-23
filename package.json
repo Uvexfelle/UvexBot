@@ -21,6 +21,7 @@
         "express": "^5.2.1",
         "fuse.js": "^7.1.0",
         "node-fetch": "^3.3.2",
+        "pm2": "^7.0.3",
         "tmi.js": "^1.8.5"
     },
     "devDependencies": {
