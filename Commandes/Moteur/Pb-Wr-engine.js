@@ -1,6 +1,7 @@
+import { raw } from "express";
 import { syncGame } from "../../Api/SRC/src-fetch.js";
 import { dbBigData, dbViral } from "../../Setup/Utilitaires/loader.js";
-import { displayDate, getIdFromText, getNamesFromIds, getTitreUid, secToTime } from "./Utilitaire.js";
+import { displayDate, getIdFromText, getNamesFromIds, getTitreId, secToTime } from "./Utilitaire.js";
 
 
 //  Réponse
@@ -14,12 +15,15 @@ const TEMPLATES = {
     pb: {
         noRecord: `Aucun record trouvé pour le moment o7`,
         pasDeRecord: (nomJeu, nomCat) => `Pas de record sur ${nomJeu} ${nomCat}`,
+        pasDeJeu: (inputRestant) => `Dsl il semblerait que je n'ai pas ${inputRestant} dans ma liste de jeu o7`,
         derniersPb: (text) => `Voici mon/mes dernier(s) Pb : ${text}`,
         resultat: (nomJeu, nomCat, temps, date, rank) => `${nomJeu} ${nomCat} : ${temps} fais le ${date} ${rank}`.trim(),
     },
     //  Wr
     wr: {
         pasDeWr: (nomJeu) => `Aucun record trouvé pour ${nomJeu}`,
+        pasDeJeu: (inputRestant) => `Dsl il semblerait que je n'ai pas ${inputRestant} dans ma liste de jeu o7`,
+        pasDeCate: (gameName) => `Il me faudrait une catégorie pour te donner le wr de ${gameName}`,
         resultat: (nomJeu, nomCat, temps, runner) => `World record sur ${nomJeu} ${nomCat} : ${temps} par ${runner}`,
     },
     //  Pb progress
@@ -193,6 +197,10 @@ export const getPbWrResponse = async (cmdName, inputRestant, runnerCible, live, 
                 const { gameName, catName } = getNamesFromIds({ gId: gameId, uid: uid });
 
             //  Pas de record
+                if (!res && gameId === null) {
+                    return rawOutPut(TEMPLATES.pb.pasDeJeu(inputRestant), prefix, activeDrapeau);
+                }
+                
                 if (!res) {
                     return rawOutPut(TEMPLATES.pb.pasDeRecord(gameName, catName), prefix, activeDrapeau);
                 }
@@ -232,19 +240,43 @@ export const getPbWrResponse = async (cmdName, inputRestant, runnerCible, live, 
                     }
                 }
 
-                    //wr lié
-                if (!wrRow) {
-                    wrRow = dbBigData.prepare(`
-                        SELECT w.wr_time, w.wr_runner, w.uid FROM world_records w
-                        JOIN src_entities e ON w.uid = e.uid
-                        WHERE e.game_id = ?
-                        ORDER BY e.cat_pop DESC LIMIT 1
-                    `).get(gameId);
+                if (gameId && !uid) {
+                    const {gameName} = getNamesFromIds({gId: gameId});
+                    return TEMPLATES.wr.pasDeCate(gameName);
+                }
+
+                if (!gameId && !uid && inputRestant) {
+                    return TEMPLATES.wr.pasDeJeu(inputRestant);
+                }
+
+                    //wr via le titre
+                if (!wrRow && !gameId && !inputRestant) {
+                    gameId = getTitreId(live);
+
+                    if (gameId) {
+                        wrRow = dbBigData.prepare(`
+                            SELECT w.wr_time, w.wr_runner, w.uid FROM world_records w
+                            JOIN current_records r ON w.uid = r.uid
+                            JOIN src_entities e ON w.uid = e.uid
+                            WHERE e.game_id = ? AND r.runner_id = ?
+                            ORDER BY r.pb_date DESC
+                            LIMIT 1
+                        `).get(gameId, runnerCible);
+
+                        if (!wrRow) {
+                            wrRow = dbBigData.prepare(`
+                                SELECT w.wr_time, w.wr_runner, w.uid FROM world_records w
+                                JOIN src_entities e ON w.uid = e.uid
+                                WHERE e.game_id = ?
+                                ORDER BY e.cat_pop DESC LIMIT 1
+                            `).get(gameId);
+                        }
+                    }
                 }
 
                 //  Récupération des infos
                 const { gameName, catName } = getNamesFromIds({ gId: gameId, uid: wrRow?.uid });
-                if (!wrRow) return TEMPLATES.wr.pasDeWr(gameName);
+                if (!wrRow) return TEMPLATES.wr.pasDeWr(inputRestant);
 
                 // Réponse
                 return rawOutPut(TEMPLATES.wr.resultat(gameName, catName, secToTime(wrRow.wr_time), wrRow.wr_runner), prefix, activeDrapeau);
@@ -630,16 +662,19 @@ export const getPbWrResponse = async (cmdName, inputRestant, runnerCible, live, 
 
             //  Catégorie via titre
                 if (!gameId && !uid) {
-                    uid = getTitreUid(live, runnerCible);
+                    gameId = getTitreId(live);
+                    console.log(`gameId : ${gameId}`);
                     res = dbBigData.prepare(`
-                        SELECT r.pb_manual_time, r.pb_src_time, r.pb_rank, r.predicted_rank, r.uid,
+                        SELECT r.pb_manual_time, r.pb_src_time, r.pb_date, r.pb_rank, r.predicted_rank, r.uid,
                             e.game_id, e.cat_pop, e.lead_json, e.variables_json, w.wr_time
                         FROM current_records r
                         JOIN src_entities e ON r.uid = e.uid
                         JOIN world_records w ON r.uid = w.uid
-                        WHERE r.runner_id = ? AND r.uid = ?
+                        WHERE r.runner_id = ? AND e.game_id = ?
+                        ORDER BY r.pb_date DESC, r.pb_date DESC
                         LIMIT 1
-                    `).get(runnerCible, uid);
+                    `).get(runnerCible, gameId);
+                    console.log(`res : ${res}`);
                 }
 
             //  Catégorie popularity
@@ -658,7 +693,7 @@ export const getPbWrResponse = async (cmdName, inputRestant, runnerCible, live, 
 
             //  Family
                 if (!res && gameId) {
-                    const gameRow = dbViral.prepare(`SELECT parent_id FROM jeux WHERE game_id = ?`).get(gId);
+                    const gameRow = dbViral.prepare(`SELECT parent_id FROM jeux WHERE game_id = ?`).get(gameId);
                     const rootId = gameRow?.parent_id ? gameRow.parent_id : gId;
 
                     const familyRows = dbViral.prepare(`

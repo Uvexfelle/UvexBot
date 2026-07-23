@@ -334,66 +334,26 @@ function _cleanStreamTitle(title) {
 }
 
         //  Montage de l'uid
-export const getTitreUid = (live, runnerCible) => {
+export const getTitreId = (live) => {
     try {
-        if (!live || !live.game || !live.title) return null;
+        if (!live || !live.game) return null;
 
         const categorieTwitch = live.game.trim();
         if (categorieTwitch.toLowerCase() === 'just chatting' || categorieTwitch.toLowerCase() === 'discussion') {
             return null;
         }
 
-        let titre = live.title.trim();
-        titre = titre.replace(/speedrun([a-zA-Z0-9])/gi, 'speedrun $1');
-        titre = titre.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, ' ');
+        const target = getIdFromText(categorieTwitch, 'force_no_fallback');
+        const gId = target?.game_id || target?.uid;
 
-        const estUnSpeedrun = /\b(speedrun|pb|pr|wr|record|run|grind|sub\s*\w+)\b/i.test(titre);
-        if (!estUnSpeedrun) return null;
-
-        titre = _cleanStreamTitle(titre);
-        if (!titre) return null;
-
-        titre = titre.toLowerCase();
-        const motsJeux = categorieTwitch.toLowerCase().split(/\s+/);
-
-        motsJeux.forEach(mot => {
-            if (mot.length > 2) {
-                const regexMot = new RegExp(`\\b${mot}\\b`, 'g');
-                titre = titre.replace(regexMot, '');
-            }
-        });
-
-        titre =  titre.replace(/\s+/g, ' ').trim();
-
-        const input = `${categorieTwitch} ${titre}`.trim();
-        const target = getIdFromText(input, 'force_no_fallback');
-
-        console.log(
-            `|¢|¢ DIAGNOSTIC TARGET POUR : "${titre.substring(0, 30)}..." |¢|¢\n` +
-            `target existe = ${!!target} | type de target = ${typeof target}\n` +
-            `target.uid = ${target?.uid || 'undefined'} | target.game_id = ${target?.game_id || 'undefined'}\n` +
-            `target.category_id = ${target?.category_id || 'undefined'} | target.texteRestant = "${target?.texteRestant || ''}"`
-        );
-
-        if (!target?.uid && target?.game_id) {
-            const topCatRow = dbBigData.prepare(`
-                SELECT e.uid
-                FROM src_entities e
-                LEFT JOIN current_records r ON e.uid = r.uid AND r.runner_id = ?
-                WHERE e.game_id = ?
-                ORDER BY
-                    (CASE WHEN r.uid IS NOT NULL THEN 1 ELSE 0 END) DESC,
-                    e.cat_pop DESC
-                LIMIT 1
-            `).get(runnerCible, target.game_id);
-
-            if (topCatRow?.uid) return topCatRow.uid;
+        if (!gId) {
+            return null;
         }
 
-        return target ? target.uid : null;
+        return gId;
         
     } catch (err) {
-        console.error(`[ça pue du cul...] getTitreUid n'as pas pu trouver d'uid :`, err);
+        console.error(`[ça pue du cul...] getTitreId n'as pas pu trouver d'uid :`, err);
         return null;
     }
 };
